@@ -16,6 +16,8 @@ const routes = {
   ["cloudsmith." + CUSTOM_DOMAIN]: "https://docker.cloudsmith.io",
   ["ecr." + CUSTOM_DOMAIN]: "https://public.ecr.aws",
 
+  ["github." + CUSTOM_DOMAIN]: "https://github.com",
+
   // staging
   ["docker-staging." + CUSTOM_DOMAIN]: dockerHub,
 };
