@@ -6,6 +6,10 @@
 
 > If you're looking for proxy for helm, maybe you can try [cloudflare-helm-proxy](https://github.com/litianhe/cloudflare-helm-proxy).
 
+## Introduction
+This project is a docker registry proxy. It's deployed as a cloudflare worker, and provide the proxy service for accessing docker registry.
+
+
 ## Deploy
 
 1. click the "Deploy With Workers" button
@@ -27,8 +31,24 @@ name = "cloudflare-proxy"
    - add more records and modify the config as you need
    ```javascript
    const routes = {
-     // production
-    ["docker." + CUSTOM_DOMAIN]: dockerHub,
+      ["docker." + CUSTOM_DOMAIN]: dockerHub,
+      ["quay." + CUSTOM_DOMAIN]: "https://quay.io",
+      ["gcr." + CUSTOM_DOMAIN]: "https://gcr.io",
+      ["k8s-gcr." + CUSTOM_DOMAIN]: "https://k8s.gcr.io",
+      ["k8s." + CUSTOM_DOMAIN]: "https://registry.k8s.io",
+      ["ghcr." + CUSTOM_DOMAIN]: "https://ghcr.io",
+      ["cloudsmith." + CUSTOM_DOMAIN]: "https://docker.cloudsmith.io",
+      ["ecr." + CUSTOM_DOMAIN]: "https://public.ecr.aws",
    }
    ```
-2. 
+2. config so the access to docker.example.com can be redirect to docker.io, and then access `https://www.example.com` to check the routers
+3. change the docker daemon's registry-mirrors file `/etc/docker/daemon.json` with content like this:
+```
+{
+  "registry-mirrors": [
+      "https://docker.example.com"
+  ]
+}
+```
+4. Restart docker service with command `sudo service docker restart` and test it with `docker pull nginx`
+>  Note: The worker with free plan can only handle 10k requests per day, and pls retry if the docker pull request failed(resource limitation in cloudflare worker free plan)
