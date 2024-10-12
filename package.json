@@ -3,7 +3,7 @@
   "private": true,
   "description": "",
   "version": "1.0.0",
-  "author": "ciiiii <allen.cccccnm@gmail.com>",
+  "author": "tianhe",
   "dependencies": {},
   "devDependencies": {
     "prettier": "^2.4.1",
