@@ -12,12 +12,15 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     name: Build & Deploy
+    env:
+      CUSTOM_DOMAIN: ${{ secrets.CUSTOM_DOMAIN || 'your.xxx-example-domain.xxxdomain' }}
     steps:
       - uses: actions/checkout@v4
+      - name: Print Environment Variables
+        run: |
+          echo "CUSTOM_DOMAIN is: $CUSTOM_DOMAIN"
       - name: Publish
         uses: cloudflare/wrangler-action@v3
-        env:
-          CUSTOM_DOMAIN: ${{ secrets.CUSTOM_DOMAIN || 'libcuda.so' }}
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           accountId: ${{secrets.CF_ACCOUNT_ID}}
