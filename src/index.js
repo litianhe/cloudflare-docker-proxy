@@ -4,6 +4,7 @@ addEventListener("fetch", (event) => {
 });
 
 const dockerHub = "https://registry-1.docker.io";
+const gitHub = "https://github.com";
 
 const routes = {
   // production
@@ -15,8 +16,7 @@ const routes = {
   ["ghcr." + CUSTOM_DOMAIN]: "https://ghcr.io",
   ["cloudsmith." + CUSTOM_DOMAIN]: "https://docker.cloudsmith.io",
   ["ecr." + CUSTOM_DOMAIN]: "https://public.ecr.aws",
-
-  // ["github." + CUSTOM_DOMAIN]: "https://github.com",
+  ["github." + CUSTOM_DOMAIN]: gitHub,
 };
 
 function routeByHosts(host) {
@@ -43,7 +43,10 @@ async function handleRequest(request) {
     );
   }
   const isDockerHub = upstream == dockerHub;
+  const isGitHub = upstream == gitHub;
+
   const authorization = request.headers.get("Authorization");
+
   if (url.pathname == "/v2/") {
     const newUrl = new URL(upstream + "/v2/");
     const headers = new Headers();
@@ -99,6 +102,7 @@ async function handleRequest(request) {
       return Response.redirect(redirectUrl, 301);
     }
   }
+
   // foward requests
   const newUrl = new URL(upstream + url.pathname);
   const newReq = new Request(newUrl, {
