@@ -1,3 +1,5 @@
+import DOCS from "./help.html";
+
 addEventListener("fetch", (event) => {
   event.passThroughOnException();
   event.respondWith(handleRequest(event.request));
@@ -6,9 +8,15 @@ addEventListener("fetch", (event) => {
 const dockerHub = "https://registry-1.docker.io";
 const gitHub = "https://github.com";
 
+const registry_dockerHub = "https://registry-1.docker.io";
+const index_dockerHub = "https://index.docker.io";
+const registry_quay = "https://quay.io";
+const index_quay = "https://quay.io";
+
 const routes = {
   // production
-  ["docker." + CUSTOM_DOMAIN]: dockerHub,
+  ["doc." + CUSTOM_DOMAIN]: "doc",
+  ["docker." + CUSTOM_DOMAIN]: registry_dockerHub,
   ["quay." + CUSTOM_DOMAIN]: "https://quay.io",
   ["gcr." + CUSTOM_DOMAIN]: "https://gcr.io",
   ["k8s-gcr." + CUSTOM_DOMAIN]: "https://k8s.gcr.io",
@@ -42,10 +50,66 @@ async function handleRequest(request) {
       }
     );
   }
+
+  // return docs
+  if (upstream === "doc") {
+    return new Response(DOCS, {
+      status: 200,
+      headers: {
+        "content-type": "text/html",
+      },
+    });
+  }
+
   const isDockerHub = upstream == dockerHub;
   const isGitHub = upstream == gitHub;
 
   const authorization = request.headers.get("Authorization");
+
+  if (url.pathname.startsWith("/v1/")) {
+    let newUrl = url
+
+    // Docker API /v1/_ping
+    // https://docs.docker.com/reference/api/engine/version/v1.47/#tag/System/operation/SystemPing
+    if (url.pathname == "/v1/_ping") {
+      return new Response(null, {
+        status: 200,
+        headers: {
+          "content-type": "text/plain",
+        },
+      });
+    }
+
+    // Docker API /v1/search
+    if (url.pathname == "/v1/search") {
+      if(isDockerHub){
+        newUrl = new URL(index_dockerHub + "/v1/search");
+      }else if(isQuay){
+        newUrl = new URL(index_quay + "/v1/search");
+      }else{
+        newUrl = url
+      }
+
+      newUrl.search = url.search;
+    }
+
+    const headers = new Headers();
+    if (authorization) {
+      headers.set("Authorization", authorization);
+    }
+
+    // check if need to authenticate
+    const resp = await fetch(newUrl.toString(), {
+      method: "GET",
+      headers: headers,
+      redirect: "follow",
+    });
+
+    if (resp.status === 401) {
+      return responseUnauthorized(url);
+    }
+    return resp;
+  }
 
   if (url.pathname == "/v2/") {
     const newUrl = new URL(upstream + "/v2/");
@@ -91,10 +155,13 @@ async function handleRequest(request) {
     }
     return await fetchToken(wwwAuthenticate, scope, authorization);
   }
+  console.log(JSON.stringify(url, null, 2))
+
   // redirect for DockerHub library images
   // Example: /v2/busybox/manifests/latest => /v2/library/busybox/manifests/latest
   if (isDockerHub) {
     const pathParts = url.pathname.split("/");
+    console.log(JSON.stringify(url, null, 2))
     if (pathParts.length == 5) {
       pathParts.splice(2, 0, "library");
       const redirectUrl = new URL(url);
@@ -157,7 +224,7 @@ async function fetchToken(wwwAuthenticate, scope, authorization) {
 }
 
 function responseUnauthorized(url) {
-  const headers = new(Headers);
+  const headers = new Headers();
   if (MODE == "debug") {
     headers.set(
       "Www-Authenticate",
