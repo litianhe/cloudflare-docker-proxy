@@ -1,4 +1,5 @@
 import DOCS from "./help.html";
+import PAGE404 from "./404.html";
 
 addEventListener("fetch", (event) => {
   event.passThroughOnException();
@@ -8,7 +9,6 @@ addEventListener("fetch", (event) => {
 const dockerHub = "https://registry-1.docker.io";
 const gitHub = "https://github.com";
 
-const registry_dockerHub = "https://registry-1.docker.io";
 const index_dockerHub = "https://index.docker.io";
 const registry_quay = "https://quay.io";
 const index_quay = "https://quay.io";
@@ -16,7 +16,7 @@ const index_quay = "https://quay.io";
 const routes = {
   // production
   ["doc." + CUSTOM_DOMAIN]: "doc",
-  ["docker." + CUSTOM_DOMAIN]: registry_dockerHub,
+  ["docker." + CUSTOM_DOMAIN]: "https://registry-1.docker.io",
   ["quay." + CUSTOM_DOMAIN]: "https://quay.io",
   ["gcr." + CUSTOM_DOMAIN]: "https://gcr.io",
   ["k8s-gcr." + CUSTOM_DOMAIN]: "https://k8s.gcr.io",
@@ -40,15 +40,18 @@ function routeByHosts(host) {
 async function handleRequest(request) {
   const url = new URL(request.url);
   const upstream = routeByHosts(url.hostname);
+  // if (upstream === "") {
+  //   return new Response(PAGE404,{
+  //       status: 404,
+  //       headers: {
+  //         "content-type": "text/html",
+  //       },
+  //     }
+  //   );
+  // }
+
   if (upstream === "") {
-    return new Response(
-      JSON.stringify({
-        routes: routes,
-      }),
-      {
-        status: 404,
-      }
-    );
+    return fetch(request);
   }
 
   // return docs
