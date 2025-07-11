@@ -175,6 +175,12 @@ async function handleRequest(request) {
 
   // foward requests
   const newUrl = new URL(upstream + url.pathname);
+  const headers = new Headers(request.headers);
+  // Add User-Agent header for GitHub
+  if (isGitHub && !headers.has("User-Agent")) {
+    headers.set("User-Agent", "Cloudflare-Docker-Proxy");
+  }
+
   const newReq = new Request(newUrl, {
     method: request.method,
     headers: request.headers,
